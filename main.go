@@ -27,9 +27,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
+	lediscfg "github.com/siddontang/ledisdb/config"
+	"github.com/siddontang/ledisdb/ledis"
+	"github.com/yasukun/ogcache-server/lib"
 )
 
 func Usage() {
@@ -40,15 +44,20 @@ func Usage() {
 
 func main() {
 	flag.Usage = Usage
-	protocol := flag.String("P", "binary", "Specify the protocol (binary, compact, json, simplejson)")
-	framed := flag.Bool("framed", false, "Use framed transport")
-	buffered := flag.Bool("buffered", false, "Use buffered transport")
-	addr := flag.String("addr", "localhost:9090", "Address to listen to")
-	secure := flag.Bool("secure", false, "Use tls secure transport")
-
+	confname := flag.String("c", "ogcache-server.toml", "path to config")
 	flag.Parse()
+	_, err := os.Stat(*confname)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	conf, err := lib.DecodeConfigToml(*confname)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	var protocolFactory thrift.TProtocolFactory
-	switch *protocol {
+	switch conf.Main.Protocol {
 	case "compact":
 		protocolFactory = thrift.NewTCompactProtocolFactory()
 	case "simplejson":
@@ -58,23 +67,34 @@ func main() {
 	case "binary", "":
 		protocolFactory = thrift.NewTBinaryProtocolFactoryDefault()
 	default:
-		fmt.Fprint(os.Stderr, "Invalid protocol specified", protocol, "\n")
+		fmt.Fprint(os.Stderr, "Invalid protocol specified", conf.Main.Protocol, "\n")
 		Usage()
 		os.Exit(1)
 	}
 	var transportFactory thrift.TTransportFactory
-	if *buffered {
+	if conf.Main.Bufferd {
 		transportFactory = thrift.NewTBufferedTransportFactory(8192)
 	} else {
 		transportFactory = thrift.NewTTransportFactory()
 	}
 
-	if *framed {
+	if conf.Main.Framed {
 		transportFactory = thrift.NewTFramedTransportFactory(transportFactory)
 	}
 
 	// always run server here
-	if err := runServer(transportFactory, protocolFactory, *addr, *secure); err != nil {
+	cfg := lediscfg.NewConfigDefault()
+	cfg.DataDir = conf.Ledisdb.Datadir
+	l, err := ledis.Open(cfg)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer l.Close()
+	db, err := l.Select(0)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if err := runServer(transportFactory, protocolFactory, conf, db); err != nil {
 		fmt.Println("error running server:", err)
 	}
 }

@@ -26,29 +26,56 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"ogcache"
+
+	"github.com/dyatlov/go-opengraph/opengraph"
+	"github.com/siddontang/ledisdb/ledis"
+	"github.com/yasukun/ogcache-server/lib"
 )
 
-type OgcacheHandler struct{}
+type OgcacheHandler struct {
+	DB      *ledis.DB
+	Headers map[string]string
+}
 
 // NewOgcacheHandler ...
-func NewOgcacheHandler() *OgcacheHandler {
-	return &OgcacheHandler{}
+func NewOgcacheHandler(conf lib.Config, db *ledis.DB) *OgcacheHandler {
+	headers := map[string]string{}
+	for _, v := range conf.Headers {
+		headers[v.Name] = v.Value
+	}
+	return &OgcacheHandler{Headers: headers, DB: db}
 }
 
 // (o *OgcacheHandler) Inquiry ...
 func (o *OgcacheHandler) Inquiry(ctx context.Context, url string) (*ogcache.OpenGraph, error) {
-	return &ogcache.OpenGraph{
-		Title:           "test title",
-		Type:            "test type",
-		Image:           "test image",
-		URL:             "test url",
-		Audio:           "test audio",
-		Description:     "test description",
-		Determiner:      "test determiner",
-		Locale:          "test locale",
-		LocaleAlternate: []string{"test1 LocaleAlternate", "test2 LocaleAlternate"},
-		SiteName:        "test sitename",
-		Video:           "test video",
-	}, nil
+	var og *ogcache.OpenGraph
+	if !lib.ExistsOpenGraph(o.DB, url) {
+		byteHtml, err := lib.GetHtml(o.Headers, url)
+		if err != nil {
+			return og, err
+		}
+		openGraph, err := lib.GetOpenGraph(byteHtml)
+		if err != nil {
+			return og, err
+		}
+		if err = lib.SetOpenGraphToCache(o.DB, url, openGraph.String()); err != nil {
+			return og, err
+		}
+		og = lib.ConvOpenGraph(openGraph)
+	} else {
+		jsonRaw, err := lib.GetOpenGraphFromCache(o.DB, url)
+		if err != nil {
+			return og, err
+		}
+		openGraph := new(opengraph.OpenGraph)
+		if err = json.Unmarshal(jsonRaw, openGraph); err != nil {
+			return og, err
+		}
+
+		og = lib.ConvOpenGraph(openGraph)
+	}
+
+	return og, nil
 }

@@ -30,31 +30,33 @@ import (
 	"ogcache"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
+	"github.com/siddontang/ledisdb/ledis"
+	"github.com/yasukun/ogcache-server/lib"
 )
 
-func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory, addr string, secure bool) error {
+func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory, conf lib.Config, db *ledis.DB) error {
 	var transport thrift.TServerTransport
 	var err error
-	if secure {
+	if conf.Main.Secure {
 		cfg := new(tls.Config)
 		if cert, err := tls.LoadX509KeyPair("keys/server.crt", "keys/server.key"); err == nil {
 			cfg.Certificates = append(cfg.Certificates, cert)
 		} else {
 			return err
 		}
-		transport, err = thrift.NewTSSLServerSocket(addr, cfg)
+		transport, err = thrift.NewTSSLServerSocket(conf.Main.Addr, cfg)
 	} else {
-		transport, err = thrift.NewTServerSocket(addr)
+		transport, err = thrift.NewTServerSocket(conf.Main.Addr)
 	}
 
 	if err != nil {
 		return err
 	}
 	fmt.Printf("%T\n", transport)
-	handler := NewOgcacheHandler()
+	handler := NewOgcacheHandler(conf, db)
 	processor := ogcache.NewOgServiceProcessor(handler)
 	server := thrift.NewTSimpleServer4(processor, transport, transportFactory, protocolFactory)
 
-	fmt.Println("Starting the simple server... on ", addr)
+	fmt.Println("Starting the ogcache server... on ", conf.Main.Addr)
 	return server.Serve()
 }
