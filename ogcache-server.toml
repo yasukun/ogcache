@@ -1,0 +1,13 @@
+[main]
+protocol = "binary"     # Specify the protocol (binary, compact, json, simplejson)
+framed = false          # Use framed transport
+buffered = false        # Use buffered transport
+addr = "localhost:9090" # Address to listen to
+secure = false          # Use tls secure transport
+
+[[headers]]
+name = "User-Agent"
+value = "Golang_OpenGraph_Bot/1.0"
+
+[ledisdb]
+datadir = "./ogcache-dir"
