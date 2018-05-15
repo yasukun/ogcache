@@ -27,7 +27,6 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"log"
 	"ogcache"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
@@ -44,12 +43,12 @@ func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift
 
 	l, err := ledis.Open(cfg)
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 	defer l.Close()
 	db, err := l.Select(0)
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	if conf.Main.Secure {
