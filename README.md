@@ -1,1 +1,1 @@
-# ogcache
+# ogcache-server
