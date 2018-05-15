@@ -31,8 +31,6 @@ import (
 	"os"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
-	lediscfg "github.com/siddontang/ledisdb/config"
-	"github.com/siddontang/ledisdb/ledis"
 	"github.com/yasukun/ogcache-server/lib"
 )
 
@@ -83,18 +81,7 @@ func main() {
 	}
 
 	// always run server here
-	cfg := lediscfg.NewConfigDefault()
-	cfg.DataDir = conf.Ledisdb.Datadir
-	l, err := ledis.Open(cfg)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer l.Close()
-	db, err := l.Select(0)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	if err := runServer(transportFactory, protocolFactory, conf, db); err != nil {
+	if err := runServer(transportFactory, protocolFactory, conf); err != nil {
 		fmt.Println("error running server:", err)
 	}
 }

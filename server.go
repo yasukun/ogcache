@@ -27,16 +27,31 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"log"
 	"ogcache"
 
 	"git.apache.org/thrift.git/lib/go/thrift"
+	lediscfg "github.com/siddontang/ledisdb/config"
 	"github.com/siddontang/ledisdb/ledis"
 	"github.com/yasukun/ogcache-server/lib"
 )
 
-func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory, conf lib.Config, db *ledis.DB) error {
+func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory, conf lib.Config) error {
 	var transport thrift.TServerTransport
 	var err error
+	cfg := lediscfg.NewConfigDefault()
+	cfg.DataDir = conf.Ledisdb.Datadir
+
+	l, err := ledis.Open(cfg)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer l.Close()
+	db, err := l.Select(0)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	if conf.Main.Secure {
 		cfg := new(tls.Config)
 		if cert, err := tls.LoadX509KeyPair("keys/server.crt", "keys/server.key"); err == nil {
