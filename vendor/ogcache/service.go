@@ -569,7 +569,7 @@ func (p *OgServiceProcessor) Process(ctx context.Context, iprot, oprot thrift.TP
   oprot.WriteMessageBegin(name, thrift.EXCEPTION, seqId)
   x4.Write(oprot)
   oprot.WriteMessageEnd()
-  oprot.Flush(ctx)
+  oprot.Flush()
   return false, x4
 
 }
@@ -586,7 +586,7 @@ func (p *ogServiceProcessorInquiry) Process(ctx context.Context, seqId int32, ip
     oprot.WriteMessageBegin("inquiry", thrift.EXCEPTION, seqId)
     x.Write(oprot)
     oprot.WriteMessageEnd()
-    oprot.Flush(ctx)
+    oprot.Flush()
     return false, err
   }
 
@@ -599,7 +599,7 @@ var retval *OpenGraph
     oprot.WriteMessageBegin("inquiry", thrift.EXCEPTION, seqId)
     x.Write(oprot)
     oprot.WriteMessageEnd()
-    oprot.Flush(ctx)
+    oprot.Flush()
     return true, err2
   } else {
     result.Success = retval
@@ -613,7 +613,7 @@ var retval *OpenGraph
   if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
     err = err2
   }
-  if err2 = oprot.Flush(ctx); err == nil && err2 != nil {
+  if err2 = oprot.Flush(); err == nil && err2 != nil {
     err = err2
   }
   if err != nil {
