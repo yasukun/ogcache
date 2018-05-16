@@ -13,6 +13,10 @@ $ go build
 ## test
 
 ```bash
+$ ./ogcache-server
+```
+
+```bash
 $ pip install thriftpy
 $ python client-test.py
 ```
