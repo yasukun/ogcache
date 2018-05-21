@@ -38,10 +38,10 @@ import (
 func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory, conf lib.Config) error {
 	var transport thrift.TServerTransport
 	var err error
-	cfg := lediscfg.NewConfigDefault()
-	cfg.DataDir = conf.Ledisdb.Datadir
+	lcfg := lediscfg.NewConfigDefault()
+	lcfg.DataDir = conf.Ledisdb.Datadir
 
-	l, err := ledis.Open(cfg)
+	l, err := ledis.Open(lcfg)
 	if err != nil {
 		return err
 	}
