@@ -37,7 +37,7 @@ type MainConfig struct {
 	Framed   bool   `toml:"framed"`
 	Bufferd  bool   `toml:"buffered"`
 	Addr     string `toml:"addr"`
-	Secure   bool   `toml:"false"`
+	Secure   bool   `toml:"secure"`
 }
 
 type HeaderConfig struct {
